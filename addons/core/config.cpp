@@ -14,7 +14,7 @@ class CfgPatches {
 class Intercept {
     class InterceptPython {
         class InterceptPython_Core {
-            pluginName = "InterceptPython";
+            pluginName = "interceptpython";
         };
     };
 };
