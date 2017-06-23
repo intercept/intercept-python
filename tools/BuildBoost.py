@@ -2,7 +2,7 @@ import sys, os, shutil, glob, ntpath
 import os.path
 
 configString = "using python : {} : {} : {} : {} ;"
-compileString = "bjam --user-config=autobuild-config.jam --with-python python-debugging=off threading=multi link={} variant={} address-model={} stage"
+compileString = 'bjam --user-config=autobuild-config.jam --with-python python-debugging=off threading=multi link={} variant={} address-model={} cxxflags="/std:c++latest" define=_HAS_AUTO_PTR_ETC stage'
 
 def main(argv):
 	print("Building Boost.Python")
@@ -84,6 +84,9 @@ def build(boostPath, pythonPath, architecture, buildDebug, buildRelease):
 	for f in glob.glob(r'./stage/lib/*'):
 		print("Copying from {} to {}".format(f, os.path.join(outputFolder, ntpath.basename(f))))
 		shutil.copy(f, os.path.join(outputFolder, ntpath.basename(f)))
+	# And copy all libs without `python3`
+	for f in glob.glob(r'./stage/lib/*.lib'):
+		shutil.copy(f, os.path.join(outputFolder, ntpath.basename(f).replace('python3', 'python')))
 	shutil.rmtree('./stage') # Remove stage as its not needed anymore
 	
 if __name__ == "__main__":
