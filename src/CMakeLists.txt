@@ -108,7 +108,7 @@ SOURCE_GROUP("includes\\intercept\\client\\sqf" FILES ${INTERCEPT_CLIENT_SQF_SHA
 
 # Set defines to enable deprecated stuff (make Boost c++17 "compatible")
 add_definitions(-D_HAS_AUTO_PTR_ETC) # Possible other defines: _HAS_FUNCTION_ASSIGN _HAS_OLD_IOSTREAMS_MEMBERS _HAS_TR1_NAMESPACE
-add_definitions(-DBOOST_LIB_NAME=boost_python )
+add_definitions(-DBOOST_LIB_NAME=boost_python -DBOOST_PYTHON_STATIC_LIB)
 
 link_directories(${BOOST_LIB_DIR})
 
