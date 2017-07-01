@@ -3,6 +3,12 @@
 #include <intercept.hpp>
 #include <boost/python.hpp>
 
-void __cdecl intercept::pre_init();
 
+int __cdecl intercept::api_version();
+void __cdecl intercept::pre_init();
 void __cdecl intercept::pre_start();
+
+BOOL APIENTRY DllMain(HMODULE hModule,
+	DWORD  ul_reason_for_call,
+	LPVOID lpReserved
+);

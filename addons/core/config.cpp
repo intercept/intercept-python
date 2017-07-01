@@ -1,9 +1,10 @@
 class CfgPatches {
     class InteceptPython_Core {
         name = "Intercept Python - Core";
-        units[] = {};
+        units[] = { "" };
         weapons[] = {};
-        requiredVersion = 1.70;
+        requiredVersion = 0.1;
+		version = 0.1;
         requiredAddons[] = {"Intercept_Core"};
         author = "Intercept Python Team";
         authors[] = {"Zakant","Overfl0"};
@@ -14,7 +15,7 @@ class CfgPatches {
 class Intercept {
     class InterceptPython {
         class InterceptPython_Core {
-            pluginName = "interceptpython";
+            pluginName = "InterceptPython";
         };
     };
 };
