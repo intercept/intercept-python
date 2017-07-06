@@ -55,9 +55,6 @@ def main(argv):
         header.write('using namespace intercept::sqf;\n')
         header.write('using namespace intercept::types;\n\n')
 
-        # Writing a Dummy class used for subspacing
-        header.write('class __ScopeDummy {};\n\n')
-
         # Write the function that adds the inittabs
         header.write("inline void addSQFModules() {\n")
         for cat in functionList:
