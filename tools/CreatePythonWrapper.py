@@ -7,12 +7,13 @@ import datetime
 import CppHeaderParser
 import codecs
 
-skipedCategories = ["common_helpers", "actions", "deprecated"]
+skipedCategories = ["common_helpers", "actions", "deprecated", "sqf"]
 
 def main(argv):
     print("Creating wrapper code for sqf")
 
     functionList = {}
+    allFunctions = []
     if len(argv) > 1:
         interceptPath = argv[1]
     else:
@@ -23,16 +24,20 @@ def main(argv):
     print("Output header path: {}".format(resultHeaderPath))
     print('Parsing header... This may take a while!')
     for f in glob.glob(headerPath):
+        # if os.path.basename(f)[:-4] in skipedCategories:
+            # continue
         functionList[os.path.basename(f)[:-4]] = []
         try:
             with codecs.open(f, 'r', 'utf-8') as headerFile:
                 headerData = headerFile.read()
+            headerData = headerData.replace('enum class', 'enum') # Enum classes are nice ... but not recognized as enums!
             print('Parsing header {}'.format(f))
             header = CppHeaderParser.CppHeader(headerData[1:], argType='string') # We have to remove the byte order mark \ufeff
         except Exception as e:
             print(e)
             sys.exit(1)
         functionList[os.path.basename(f)[:-4]] = header
+        allFunctions += header.functions
     print("Parsing done")
     print("Writing headers...")
     if os.path.exists(resultHeaderPath):
@@ -50,6 +55,9 @@ def main(argv):
         header.write('using namespace intercept::sqf;\n')
         header.write('using namespace intercept::types;\n\n')
 
+        # Writing a Dummy class used for subspacing
+        header.write('class __ScopeDummy {};\n\n')
+
         # Write the function that adds the inittabs
         header.write("inline void addSQFModules() {\n")
         for cat in functionList:
@@ -65,22 +73,52 @@ def main(argv):
                 header.write('BOOST_PYTHON_MODULE(__sqf_{})\n{}\n'.format(category, '{'))
                 # Write the categories functions
                 for f in sqfHeader.functions:
+                    if f['name'].startswith('operator'): # Operators are - for now - not supported
+                        continue
                     static_cast = "&{}"
-                    if existOverload(f, sqfHeader):
+                    if existOverload(f, allFunctions):
                         static_cast = "static_cast<{}(*)({})>(&{})".format(f['rtnType'], ','.join([x['type'] for x in f['parameters']]), '{}')
                     header.write('\tboost::python::def("{}", {});\n'.format(getPythonicName(f['name']), static_cast.format(f['name'])))
                 # Write the categories enums
                 for e in sqfHeader.enums:
-                    pass
-                # Write the categories classes
+                    header.write('\tboost::python::enum_<{}>("{}")'.format(e['name'], getPythonicName(e['name'])))
+                    for v in e['values']:
+                        header.write('\n\t\t.value("{}", static_cast<{}>({}))'.format(v['name'], e['name'], v['value']))
+                    header.write(';\n')
+                # Write the categories classes / structs
                 for c in sqfHeader.classes:
-                    pass
+                    cls = sqfHeader.classes[c]
+                    cFunctions = list(cls['methods']['public'])
+                    primarConstructor = getPrimaryConstructor(cFunctions)
+                    header.write('\tboost::python::class_<{}>("{}"'.format(c, getPythonicName(c)))
+                    if primarConstructor != None:
+                        cFunctions.remove(primarConstructor)
+                        header.write(', boost::python::init<{}>())'.format(','.join([x['type'] for x in primarConstructor['parameters']])))
+                    else:
+                        header.write(')')
+                    for cFunc in cFunctions:
+                        if cFunc['constructor']:
+                            if len([y for y in [x['type'].replace(' ', '') for x in cFunc['parameters']] if y.endswith('&&')]) > 0:
+                                continue
+                            header.write('\n\t\t.def(boost::python::init<{}>())'.format(','.join([x['type'] for x in cFunc['parameters']])))
+                        else:
+                            if cFunc['name'].startswith('operator'): # Operators are - for now - not supported
+                                continue
+                            fullFunctionName = '{}::{}'.format(c, cFunc['name'])
+                            if existOverload(cFunc, cFunctions):
+                                functionReferenc = 'static_cast<{}>(&{})'.format(','.join([x['type'] for x in cFunc['parameters']]), fullFunctionName)
+                            else:
+                                functionReferenc = '&{}'.format(fullFunctionName)
+                            header.write('\n\t\t.def("{}", {})'.format(getPythonicName(cFunc['name']), functionReferenc))
+                    for props in cls['properties']['public']:
+                        header.write('\n\t\t.def_readwrite("{}", &{}::{})'.format(getPythonicName(props['name']), c, props['name']))
+                    header.write(';\n')
                 header.write('}\n\n')
         
     print("Done")
 
-def existOverload(function, header):
-    newFuncList = list(header.functions)
+def existOverload(function, allFunctions):
+    newFuncList = list(allFunctions)
     newFuncList.remove(function)
     for f in newFuncList:
         if f['name'] == function['name']:
@@ -91,6 +129,12 @@ def getPythonicName(cname):
     parts = [x.title() for x in cname.split('_')]
     parts[0] = parts[0].lower()
     return "".join(parts)
+
+def getPrimaryConstructor(functionList):
+    for f in functionList:
+        if f['constructor']:
+            return f
+    return None
 
 # data = getEntriesFromFile(r"F:\Daten\Programmieren\Arma\intercept\src\client\headers\client\sqf\eden.hpp")
 if __name__ == "__main__":
