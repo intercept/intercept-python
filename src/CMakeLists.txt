@@ -58,10 +58,8 @@ else()
 	set(BOOST_LIB_DIR ${BOOST_PATH}/lib/win32)
 endif()
 
-set(BOOST_LIB_PATH ${BOOST_LIB_DIR}/boost_python-vc141-mt-1_64.lib)
-
 message(STATUS "Pythonlib path: ${PYTHON_LIB_PATH}")
-message(STATUS "Boostlib path: ${BOOST_LIB_PATH}")
+message(STATUS "Boostlib search path: ${BOOST_LIB_DIR}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	# This target defaults to 32-bit on linux
