@@ -3,6 +3,7 @@
 #include <intercept.hpp>
 #include <boost/python.hpp>
 #include "SQFModules.hpp"
+#include "SQFTypes.hpp"
 
 int __cdecl intercept::api_version();
 void __cdecl intercept::pre_init();

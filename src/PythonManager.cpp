@@ -19,10 +19,14 @@ void __cdecl intercept::pre_init() {
 void __cdecl intercept::pre_start() {
 	sqf::system_chat("Intercept Python was loaded!");
 	addSQFModules();
+	addSQFTypeModules();
 	Py_Initialize();
 	main_module = python::import("__main__");
 	main_namespace = main_module.attr("__dict__");
-	python::exec("systemChat('Hello from Pythonland')", main_namespace);
+	python::exec("import sys\n"
+		"sys.path.append('F:\\Test2\\Arma_Python')", main_namespace);
+	python::exec("import sqf.chat\n"
+		"sqf.chat.systemChat('Hello from Pythonland')", main_namespace);
 }
 
 void __cdecl intercept::on_frame() {
