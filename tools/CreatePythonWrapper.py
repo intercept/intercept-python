@@ -8,6 +8,7 @@ import CppHeaderParser
 import codecs
 
 skipedCategories = ["common_helpers", "actions", "deprecated", "sqf"]
+requireCast = True # Indicates if static_casts should always be used or only if overloads exists
 
 def main(argv):
     print("Creating wrapper code for sqf")
@@ -55,13 +56,6 @@ def main(argv):
         header.write('using namespace intercept::sqf;\n')
         header.write('using namespace intercept::types;\n\n')
 
-        # Write the function that adds the inittabs
-        header.write("inline void addSQFModules() {\n")
-        for cat in functionList:
-            if(not cat in skipedCategories):
-                header.write('\tPyImport_AppendInittab("__sqf_{}", &PyInit___sqf_{});\n'.format(cat, cat))
-        header.write("}\n\n")
-
         # Write the categories
         for category in functionList:
             if(not category in skipedCategories):
@@ -70,11 +64,11 @@ def main(argv):
                 header.write('BOOST_PYTHON_MODULE(__sqf_{})\n{}\n'.format(category, '{'))
                 # Write the categories functions
                 for f in sqfHeader.functions:
-                    if f['name'].startswith('operator'): # Operators are - for now - not supported
+                    if f['name'].startswith('operator') or f['namespace'].endswith('__helpers::'): # Operators and helpers are skipped
                         continue
                     static_cast = "&{}"
-                    if existOverload(f, allFunctions):
-                        static_cast = "static_cast<{}(*)({})>(&{})".format(f['rtnType'], ','.join([x['type'] for x in f['parameters']]), '{}')
+                    if requireCast or existOverload(f, allFunctions):
+                        static_cast = "static_cast<{}(*)({})>(&{})".format(f['returns'], ','.join([x['type'] for x in f['parameters']]), '{}')
                     header.write('\tboost::python::def("{}", {});\n'.format(getPythonicName(f['name']), static_cast.format(f['name'])))
                 # Write the categories enums
                 for e in sqfHeader.enums:
@@ -95,23 +89,31 @@ def main(argv):
                         header.write(')')
                     for cFunc in cFunctions:
                         if cFunc['constructor']:
-                            if len([y for y in [x['type'].replace(' ', '') for x in cFunc['parameters']] if y.endswith('&&')]) > 0:
+                            if cFunc['name'].startswith('operator') or len([y for y in [x['type'].replace(' ', '') for x in cFunc['parameters']] if y.endswith('&&')]) > 0: # Ignore custom conversions and move constructors
                                 continue
                             header.write('\n\t\t.def(boost::python::init<{}>())'.format(','.join([x['type'] for x in cFunc['parameters']])))
                         else:
                             if cFunc['name'].startswith('operator'): # Operators are - for now - not supported
                                 continue
                             fullFunctionName = '{}::{}'.format(c, cFunc['name'])
-                            if existOverload(cFunc, cFunctions):
-                                functionReferenc = 'static_cast<{}>(&{})'.format(','.join([x['type'] for x in cFunc['parameters']]), fullFunctionName)
+                            if requireCast or existOverload(cFunc, cFunctions):
+                                functionReferenc = 'static_cast<{}(*)({})>(&{})'.format(cFunc['returns'], ','.join([x['type'] for x in cFunc['parameters']]), fullFunctionName)
                             else:
                                 functionReferenc = '&{}'.format(fullFunctionName)
                             header.write('\n\t\t.def("{}", {})'.format(getPythonicName(cFunc['name']), functionReferenc))
+                            if cFunc['static']:
+                                header.write('.staticmethod("{}")'.format(getPythonicName(cFunc['name'])))
                     for props in cls['properties']['public']:
                         header.write('\n\t\t.def_readwrite("{}", &{}::{})'.format(getPythonicName(props['name']), c, props['name']))
                     header.write(';\n')
                 header.write('}\n\n')
         
+        # Write the function that adds the inittabs
+        header.write("inline void addSQFModules() {\n")
+        for cat in functionList:
+            if(not cat in skipedCategories):
+                header.write('\tPyImport_AppendInittab("__sqf_{}", &PyInit___sqf_{});\n'.format(cat, cat))
+        header.write("}\n")
     print("Done")
 
 def existOverload(function, allFunctions):
