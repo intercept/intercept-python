@@ -8,7 +8,7 @@ import CppHeaderParser
 import codecs
 
 skipedCategories = ["common_helpers", "actions", "deprecated", "sqf"]
-requireCast = True # Indicates if static_casts should always be used or only if overloads exists
+requireCast = False # Indicates if static_casts should always be used or only if overloads exists
 
 def main(argv):
     print("Creating wrapper code for sqf")
@@ -88,12 +88,14 @@ def main(argv):
                     else:
                         header.write(')')
                     for cFunc in cFunctions:
+                        if cFunc['name'].startswith('__'): # Skip double underscores. Those are considered internal!
+                            continue
                         if cFunc['constructor']:
                             if cFunc['name'].startswith('operator') or len([y for y in [x['type'].replace(' ', '') for x in cFunc['parameters']] if y.endswith('&&')]) > 0: # Ignore custom conversions and move constructors
                                 continue
                             header.write('\n\t\t.def(boost::python::init<{}>())'.format(','.join([x['type'] for x in cFunc['parameters']])))
                         else:
-                            if cFunc['name'].startswith('operator'): # Operators are - for now - not supported
+                            if cFunc['name'].startswith('operator') or cFunc['rtnType'] == '),': # Operators are - for now - not supported
                                 continue
                             fullFunctionName = '{}::{}'.format(c, cFunc['name'])
                             if requireCast or existOverload(cFunc, cFunctions):
@@ -104,7 +106,8 @@ def main(argv):
                             if cFunc['static']:
                                 header.write('.staticmethod("{}")'.format(getPythonicName(cFunc['name'])))
                     for props in cls['properties']['public']:
-                        header.write('\n\t\t.def_readwrite("{}", &{}::{})'.format(getPythonicName(props['name']), c, props['name']))
+                        if not props['name'].startswith('__'): # Skip double underscores. Those are considered internal!
+                            header.write('\n\t\t.def_readwrite("{}", &{}::{})'.format(getPythonicName(props['name']), c, props['name']))
                     header.write(';\n')
                 header.write('}\n\n')
         
