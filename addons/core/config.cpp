@@ -1,5 +1,5 @@
 class CfgPatches {
-    class InteceptPython_Core {
+    class InterceptPython_Core {
         name = "Intercept Python - Core";
         units[] = { "" };
         weapons[] = {};
