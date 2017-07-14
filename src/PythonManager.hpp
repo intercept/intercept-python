@@ -2,8 +2,10 @@
 
 #include <intercept.hpp>
 #include <boost/python.hpp>
+#include "boostHelper.hpp"
 #include "SQFModules.hpp"
 #include "SQFTypes.hpp"
+#include "search.hpp"
 
 int __cdecl intercept::api_version();
 void __cdecl intercept::pre_init();

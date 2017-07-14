@@ -23,8 +23,17 @@ void __cdecl intercept::pre_start() {
 	Py_Initialize();
 	main_module = python::import("__main__");
 	main_namespace = main_module.attr("__dict__");
+
+	auto searcher = intercept::search::python_searcher();
+	main_namespace["__ModFolders__"] = python::toPythonList(searcher.active_mod_folder_list); // Not sure about this one
+
 	python::exec("import sys\n"
-		"sys.path.append('F:\\Test2\\Arma_Python')", main_namespace);
+		"import os\n"
+		"import os.path\n"
+		"for m in __ModFolders__:\n"
+		"\tpath = os.path.join(m, 'python')\n"
+		"\tif os.path.isdir(path):\n"
+		"\t\tsys.path.append(path)", main_namespace);
 	python::exec("import sqf.chat\n"
 		"sqf.chat.systemChat('Hello from Pythonland')", main_namespace);
 }
