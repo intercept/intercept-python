@@ -17,6 +17,12 @@ def main(argv):
 	if not os.path.exists('lib'):
 		os.makedirs('lib')
 	
+	# Checking if bjam is present. Run bootstrap otherwise!
+	if not os.path.exists('bjam.exe'):
+		print("First boost run")
+		print("Running bootstrap.bat and continue afterwards!")
+		os.system("bootstrap.bat")
+	
 	print("Searching for python")
 	build64 = not '--no64' in argv
 	build86 = not '--no86' in argv
@@ -88,6 +94,7 @@ def build(boostPath, pythonPath, architecture, buildDebug, buildRelease):
 	for f in glob.glob(r'./stage/lib/*.lib'):
 		shutil.copy(f, os.path.join(outputFolder, ntpath.basename(f).replace('python3', 'python')))
 	shutil.rmtree('./stage') # Remove stage as its not needed anymore
+    print("Compilation done!")
 	
 if __name__ == "__main__":
 	main(sys.argv)
