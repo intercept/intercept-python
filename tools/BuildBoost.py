@@ -94,7 +94,7 @@ def build(boostPath, pythonPath, architecture, buildDebug, buildRelease):
 	for f in glob.glob(r'./stage/lib/*.lib'):
 		shutil.copy(f, os.path.join(outputFolder, ntpath.basename(f).replace('python3', 'python')))
 	shutil.rmtree('./stage') # Remove stage as its not needed anymore
-    print("Compilation done!")
+	print("Compilation completed")
 	
 if __name__ == "__main__":
 	main(sys.argv)
