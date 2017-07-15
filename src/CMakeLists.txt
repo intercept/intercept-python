@@ -16,8 +16,16 @@ else()
 	set(PLUGIN_NAME InterceptPython)
 endif()
 
-
 project(${PLUGIN_NAME})
+
+if("${CMAKE_GENERATOR}" MATCHES "Visual Studio 15 2017 Win64")
+	set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /std:c++latest" )
+	set( USE_64BIT_BUILD ON)
+elseif("${CMAKE_GENERATOR}" MATCHES "Visual Studio 15 2017")
+	set( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /std:c++latest" )
+elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
+	message(FATAL_ERROR "ERROR: You need a C++17 compatible compiler")
+endif()
 
 # Just for debug purpose
 if ("$ENV{INTERCEPT_PATH}" STREQUAL "")
