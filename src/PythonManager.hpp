@@ -1,8 +1,9 @@
 #pragma once
 
+#include <string>
 #include <intercept.hpp>
 #include <boost/python.hpp>
-#include "boostHelper.hpp"
+#include "pythonHelper.hpp"
 #include "SQFModules.hpp"
 #include "SQFTypes.hpp"
 #include "search.hpp"

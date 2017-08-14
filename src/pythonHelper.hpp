@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/python.hpp>
+#include <intercept.hpp>
 
 namespace boost::python
 {

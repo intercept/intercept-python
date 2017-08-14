@@ -1,6 +1,10 @@
 
 #include "PythonManager.hpp"
 
+#include <iostream>
+#include <fstream>
+
+
 namespace sqf = intercept::sqf;
 namespace client = intercept::client;
 namespace python = boost::python;
@@ -27,15 +31,21 @@ void __cdecl intercept::pre_start() {
 	auto searcher = intercept::search::python_searcher();
 	main_namespace["__ModFolders__"] = python::toPythonList(searcher.active_mod_folder_list); // Not sure about this one
 
-	python::exec("import sys\n"
-		"import os\n"
-		"import os.path\n"
-		"for m in __ModFolders__:\n"
-		"\tpath = os.path.join(m, 'python')\n"
-		"\tif os.path.isdir(path):\n"
-		"\t\tsys.path.append(path)", main_namespace);
-	python::exec("import sqf.chat\n"
-		"sqf.chat.systemChat('Hello from Pythonland')", main_namespace);
+	try
+	{
+		python::exec("import sys\n"
+			"import os\n"
+			"import os.path\n"
+			"for m in __ModFolders__:\n"
+			"\tpath = os.path.join(m, 'python')\n"
+			"\tif os.path.isdir(path):\n"
+			"\t\tsys.path.append(path)", main_namespace);
+		python::exec("import sqf.chat\n"
+			"sqf.chat.systemChat('Hello from Python!')", main_namespace);
+	}
+	catch (python::error_already_set &) {
+		PyErr_Print();
+	}
 }
 
 void __cdecl intercept::on_frame() {
