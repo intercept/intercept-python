@@ -31,6 +31,8 @@ void __cdecl intercept::pre_start() {
 	auto searcher = intercept::search::python_searcher();
 	main_namespace["__ModFolders__"] = python::toPythonList(searcher.active_mod_folder_list); // Not sure about this one
 
+
+
 	try
 	{
 		python::exec("import sys\n"
@@ -40,8 +42,31 @@ void __cdecl intercept::pre_start() {
 			"\tpath = os.path.join(m, 'python')\n"
 			"\tif os.path.isdir(path):\n"
 			"\t\tsys.path.append(path)", main_namespace);
+
+		// Getting the entry points here
+		game_value entry_return;
+		auto entriePointList = python::list();
+		__SQF(
+			private _cfgClasses;
+			private _result = [];
+			_cfgClasses = "true" configClasses (configfile >> "InterceptPython");
+			{
+				_result append [getText(_x >> "EntryPoint")];
+			} forEach _cfgClasses;
+			_result
+		).capture("", entry_return);
+		entry_return.to_array().for_each([&entriePointList](game_value v)
+		{
+			entriePointList.append(static_cast<std::string>(v));
+		});
+		main_namespace["__EntriePoints__"] = entriePointList;
+
 		python::exec("import sqf.chat\n"
-			"sqf.chat.systemChat('Hello from Python!')", main_namespace);
+			"import runpy\n"
+			"sqf.chat.systemChat('Python initilized!')\n"
+			"sqf.chat.systemChat('Running module entries...')\n"
+			"for e in __EntriePoints__:\n"
+			"\trunpy.run_module(e)", main_namespace);
 	}
 	catch (python::error_already_set &) {
 		PyErr_Print();
@@ -49,7 +74,7 @@ void __cdecl intercept::pre_start() {
 }
 
 void __cdecl intercept::on_frame() {
-	sqf::system_chat("Hello from c++");
+	// sqf::system_chat("Hello from c++");
 }
 
 // Normal Windows DLL junk...
